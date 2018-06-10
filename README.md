@@ -1,9 +1,9 @@
 #### What is communityMQTT kit ?
-The communityMQTT kit is a MQTT client kit in [Sedona Platform](https://linsong.github.io/sedona/ "Sedona Platform"), it can transfer data between sedona and MQTT broker, so that it is easy to integrate sedona powered device with other system. 
+The communityMQTT kit is a [MQTT](http://mqtt.org/) client kit in [Sedona Framework](https://linsong.github.io/sedona/ "Sedona Framework"), it can transfer data between sedona and MQTT broker, so that it is easy to integrate sedona powered device with other system. 
 
 This kit is developed as part of the community version of Sedona Framework(a trademark of Tridium). 
 
-Note: this kit is a native kit, that means you will need to compile some native codes of it into svm to make it work. 
+Note: this kit is a native kit, that means you will need to compile its native codes into svm, you can find more details [here](https://linsong.github.io/sedona/doc/nativeMethods.html).
 
 #### How does the kit work?
 There are 3 types of components: 
@@ -20,19 +20,21 @@ There are 3 types of components:
  * StrMessage
  
 The service component is the logical root object for all MQTT worker objects, otherwise it does not do much work. 
+
 The worker component is the key component within the kit, it will establish connection with MQTT broker, and loop over all its children to publish/subscribe data with MQTT broker. One worker object represents a connection session to a MQTT broker. You can have multiple worker objects to the same or different MQTT brokers at the same time.
+
 The message component is the data endpoint, you can config the MQTT data topic, how often to publish/subscribe data, the quality of service of data transfer etc. It must be child of a worker component, and under one worker component, you can create multiple message objects.
 
 #### How to use it ?
 
 The overall setup steps: 
 + create MQTTService object
-create an object of communityMQTT::MQTTService component. Where the object is created doesn't matter, we recommend the 'services' folder.
+create an object of communityMQTT::MQTTService component. Where the object is created doesn't matter, but we recommend the 'services' folder.
 
 + create worker object within MQTTService object
 Create a communityMQTT::Publisher or CommunityMQTT::Subscriber object just under the MQTTService object, then you will need to config the MQTT broker connection information. The following configs must be set: 
 
-    - host (for example: test.mosquitto.org)
+    - host (MQTT broker host, for example: test.mosquitto.org)
     - port  (MQTT default port is 1883)
     - clientid (unique id to identify this publisher)
     - username (optional)
@@ -60,6 +62,8 @@ Create a communityMQTT::Publisher or CommunityMQTT::Subscriber object just under
 * [MQTT Embedded C Library](https://github.com/eclipse/paho.mqtt.embedded-c) (dual licensed under the EPL and EDL)
 * [uthash](https://github.com/troydhanson/uthash) (BSD)
 * [log.c](https://github.com/rxi/log.c) (MIT)
+
+All these dependecy libraries have been included in the kit repository already, you don't need to download them again.
 
 #### LICENSE
 This kit is free software; you can redistribute it and/or modify it under the terms of the MIT license. See [LICENSE](https://github.com/linsong/sedona-mqtt/blob/master/LICENSE) for details.
