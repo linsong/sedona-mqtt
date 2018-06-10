@@ -1,5 +1,3 @@
-[TOC]
-
 #### What is communityMQTT kit ?
 The communityMQTT kit is a MQTT client kit in [Sedona Platform](https://linsong.github.io/sedona/ "Sedona Platform"), it can transfer data between sedona and MQTT broker, so that it is easy to integrate sedona powered device with other system. 
 
@@ -64,5 +62,5 @@ Create a communityMQTT::Publisher or CommunityMQTT::Subscriber object just under
 * [log.c](https://github.com/rxi/log.c) (MIT)
 
 #### LICENSE
-This kit is free software; you can redistribute it and/or modify it under the terms of the MIT license. See [LICENSE]() for details.
+This kit is free software; you can redistribute it and/or modify it under the terms of the MIT license. See [LICENSE](https://github.com/linsong/sedona-mqtt/blob/master/LICENSE) for details.
 
