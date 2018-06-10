@@ -8,16 +8,18 @@ Note: this kit is a native kit, that means you will need to compile its native c
 #### How does the kit work?
 There are 3 types of components: 
 
-- service component: must be the root of all other component
- * MQTTService
-- worker component: must be child of service component
- * Publisher
- * Subscriber
-- message component: must be child of worker component
- * FloatMessage
- * IntMessage
- * BoolMessage
- * StrMessage
++ service component: must be the root of all other component
+   - MQTTService
+ 
++ worker component: must be child of service component
+   - Publisher
+   - Subscriber
+ 
++ message component: must be child of worker component
+   - FloatMessage
+   - IntMessage
+   - BoolMessage
+   - StrMessage
  
 The service component is the logical root object for all MQTT worker objects, otherwise it does not do much work. 
 
