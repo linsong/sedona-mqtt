@@ -1,13 +1,13 @@
 # communityMQTT [![Build Status](https://travis-ci.org/linsong/sedona-mqtt.svg?branch=master)](https://travis-ci.org/linsong/sedona-mqtt) 
 
-#### What is communityMQTT kit ?
+## What is communityMQTT kit ?
 The communityMQTT kit is a [MQTT](http://mqtt.org/) client kit in [Sedona Framework](https://linsong.github.io/sedona/ "Sedona Framework"), it can transfer data between sedona and MQTT broker, so that it is easy to integrate sedona powered device with other system. 
 
 This kit is developed as part of the [community version of Sedona Framework](https://linsong.github.io/sedona/). Sedona Framework is a trademark of Tridium. 
 
 Note: this kit is a native kit, that means you will need to compile its native codes into svm, you can find more details [here](https://linsong.github.io/sedona/doc/nativeMethods.html).
 
-#### How does the kit work?
+## How does the kit work?
 There are 3 types of components: 
 
 + service component: must be the root of all other component
@@ -29,7 +29,7 @@ The worker component is the key component within the kit, it will establish conn
 
 The message component is the data endpoint, you can config the MQTT data topic, how often to publish/subscribe data, the quality of service of data transfer etc. It must be child of a worker component, and under one worker component, you can create multiple message objects.
 
-#### How to use it ?
+## How to use it ?
 
 The overall setup steps: 
 + create MQTTService object
@@ -62,13 +62,13 @@ Create a communityMQTT::Publisher or CommunityMQTT::Subscriber object just under
 
 + wire data slots between message object and other sedona object to make data links
 
-#### Dependecy
+## Dependecy
 * [MQTT Embedded C Library](https://github.com/eclipse/paho.mqtt.embedded-c) (dual licensed under the EPL and EDL)
 * [uthash](https://github.com/troydhanson/uthash) (BSD)
 * [log.c](https://github.com/rxi/log.c) (MIT)
 
 All these dependecy libraries have been included in the kit repository already, you don't need to download them again.
 
-#### LICENSE
+## LICENSE
 This kit is free software; you can redistribute it and/or modify it under the terms of the MIT license. See [LICENSE](https://github.com/linsong/sedona-mqtt/blob/master/LICENSE) for details.
 
