@@ -20,7 +20,11 @@ install:
   - cd sedona 
   - ./src/kits/communityMQTT/setup_test.sh 
   - source adm/unix/init.sh
+  - python adm/unix/makeunixvm.py 
+  - python adm/makesedonac.py 
+  - ./bin/sedonac.sh scode/x86-test.xml 
 
 script:
+  # - python adm/makedev.py
   # - ./src/kits/communityMQTT/run_test.sh
-  - python adm/makedev.py
+  - ./bin/svm scode/x86-test.scode -utest communityMQTT
