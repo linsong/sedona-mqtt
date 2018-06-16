@@ -15,6 +15,7 @@ before_install:
 
 install:
   - git clone --depth=50 https://github.com/linsong/sedona.git sedona 
+  - cd sedona && git checkout -b develop origin/develop && cd ..
   - mkdir -p sedona/src/kits/communityMQTT
   - mv !(sedona) sedona/src/kits/communityMQTT/
   - cd sedona 
