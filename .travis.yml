@@ -22,5 +22,5 @@ install:
   - source ./adm/unix/init.sh
 
 script:
-  - makeunixvm && makesedonac && sedonac scode/x86-test.xml && svm scode/x86-test.scode -utest communityMQTT
+  - python adm/unix/makeunixvm && python adm/makesedonac.py && ./bin/sedonac.sh scode/x86-test.xml && ./bin/svm scode/x86-test.scode -utest communityMQTT
 # - python adm/makedev.py
