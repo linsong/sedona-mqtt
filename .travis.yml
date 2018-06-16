@@ -19,6 +19,7 @@ install:
   - mv !(sedona) sedona/src/kits/communityMQTT/
   - cd sedona 
   - ./src/kits/communityMQTT/setup_test.sh 
+  - source adm/unix/init.sh
 
 script:
   # - ./src/kits/communityMQTT/run_test.sh
