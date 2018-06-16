@@ -22,4 +22,5 @@ install:
   - source ./adm/unix/init.sh
 
 script:
-  - python adm/makedev.py
+  - makeunixvm && makesedonac && sedonac scode/x86-test.xml && svm scode/x86-test.scode -utest communityMQTT
+# - python adm/makedev.py
