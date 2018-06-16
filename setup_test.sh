@@ -21,3 +21,5 @@ sed -i'' -e '\#<target name="logManager" />#a \
   <target name="communityMQTT" /> \
   ' src/kits/dir.xml
 
+echo "patching build scripts ..."
+patch -p1 < src/kits/communityMQTT/script.patch

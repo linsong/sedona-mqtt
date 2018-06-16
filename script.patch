@@ -1,0 +1,49 @@
+diff --git a/adm/unix/compileunix.py b/adm/unix/compileunix.py
+index b7dcf9d..5904ae0 100755
+--- a/adm/unix/compileunix.py
++++ b/adm/unix/compileunix.py
+@@ -16,6 +16,9 @@ import fileutil
+ def is64bit():
+   return sys.maxsize > 2**32
+ 
++def pathExists(path):
++  return os.path.exists(os.path.expanduser(os.path.expandvars(path)))
++
+ #
+ # Compile C source to a unix executable
+ #   exeFile:  absolute path of output executable
+@@ -40,14 +43,17 @@ def gcc(exeFile, srcFiles, includes, libs, defs):
+ 
+   cmd += " -DPLAT_BUILD_VERSION=" + '\\"' + env.buildVersion() + '\\"'
+ 
+-  # libs
+-  for lib in libs:
+-    cmd += " -L\"" + lib + "\""
+-
+   # src
+   for src in srcFiles:
+     cmd += " " + src
+ 
++  # lib paths
++  for lib in libs:
++    if pathExists(lib):
++        cmd += " -L\"" + lib + "\""
++    else:
++        cmd += " -l\"" + lib + "\""
++
+   # remaining options
+   cmd += " -O2"
+   cmd += " -o " + exeFile
+diff --git a/adm/unix/makeunixvm.py b/adm/unix/makeunixvm.py
+index c48ac3f..f2158ea 100755
+--- a/adm/unix/makeunixvm.py
++++ b/adm/unix/makeunixvm.py
+@@ -24,7 +24,7 @@ compiler = "gcc"
+ platFile = ""
+ stageDir = ""
+ includes = []
+-libs = []
++libs = ["pthread"]
+ defs = [ ("__UNIX__", "1"), ("SOCKET_FAMILY_INET", "1") ]
+ 
+ if sys.platform == "darwin":
