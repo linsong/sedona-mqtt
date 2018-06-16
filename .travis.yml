@@ -14,8 +14,7 @@ before_install:
   - sudo apt-get update && sudo apt-get -y install --fix-missing libc6-dev-i386 mosquitto
 
 install:
-  - git clone --depth=50 https://github.com/linsong/sedona.git sedona 
-  - cd sedona && git checkout -b develop origin/develop && cd ..
+  - git clone -b develop --depth=50 https://github.com/linsong/sedona.git sedona 
   - mkdir -p sedona/src/kits/communityMQTT
   - mv !(sedona) sedona/src/kits/communityMQTT/
   - cd sedona 
