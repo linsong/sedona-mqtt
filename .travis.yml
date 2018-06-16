@@ -21,5 +21,5 @@ install:
   - ./src/kits/communityMQTT/setup_test.sh 
 
 script:
-  - (source adm/unix/init.sh && makeunixvm && makesedonac && sedonac scode/x86-test.xml && svm scode/x86-test.scode -utest communityMQTT)
+  - ./src/kits/communityMQTT/run_test.sh
 # - python adm/makedev.py
