@@ -1,3 +1,5 @@
+# communityMQTT [![Build Status](https://travis-ci.org/linsong/sedona-mqtt.svg?branch=master)](https://travis-ci.org/linsong/sedona-mqtt) 
+
 #### What is communityMQTT kit ?
 The communityMQTT kit is a [MQTT](http://mqtt.org/) client kit in [Sedona Framework](https://linsong.github.io/sedona/ "Sedona Framework"), it can transfer data between sedona and MQTT broker, so that it is easy to integrate sedona powered device with other system. 
 
