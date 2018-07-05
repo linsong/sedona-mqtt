@@ -95,7 +95,7 @@ abstract internal class Message extends Component
       return
 
     Str msg = getPayload()
-    doPublish(handle, topic.toStr(), msg, msg.length()+1, QoS)
+    doPublish(handle, topic.toStr(), msg, msg.length(), QoS)
 
     lastPublishTime = Sys.ticks()
     readyToPublish = false
