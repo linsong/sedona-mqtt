@@ -25,10 +25,14 @@ class BoolMessage extends Message
   ** 
   protected override Str getPayload() 
   { 
-    if (payload)
-        return "1";
+    Str s = null
+    if (payload == true)
+      s = "1"
+    else if (payload == false)
+      s = "0"
     else
-        return "0";
+      s = "2"
+    return s
   }
 
   ** 
@@ -41,7 +45,13 @@ class BoolMessage extends Message
     if (!result)
       return result
 
-    payload := strBuf.equals("true") || strBuf.equals("True") || strBuf.equals("TRUE") || strBuf.equals("1")
+    if (strBuf.equals("true") || strBuf.equals("True") || strBuf.equals("TRUE") || strBuf.equals("1"))
+      payload := true
+    else if (strBuf.equals("false") || strBuf.equals("False") || strBuf.equals("FALSE") || strBuf.equals("0"))
+      payload := false
+    else
+      payload := null
+
     return result
   }
 }
