@@ -126,9 +126,9 @@ abstract internal class Worker extends Component
       else
       {
         if (status == Connected)
-          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) established")
+          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}, ${clientid.toStr()}) established")
         if (status == Disconnected) {
-          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) lost")
+          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}, ${clientid.toStr()}) lost")
           stopWorker()
         }
       }
@@ -211,7 +211,7 @@ abstract internal class Worker extends Component
         if (service == null)
           App.log.error("MQTTService is missing")
         else
-          MQTTService.log.message("session times out, stop session now ...")
+          MQTTService.log.message("session with clientid ${clientid.toStr()} times out, stop session now ...")
         stopWorker()
 
         retryStartTime = Sys.ticks()
