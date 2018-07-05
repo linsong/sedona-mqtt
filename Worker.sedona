@@ -127,8 +127,10 @@ abstract internal class Worker extends Component
       {
         if (status == Connected)
           MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) established")
-        if (status == Disconnected)
+        if (status == Disconnected) {
           MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) lost")
+          stopWorker()
+        }
       }
     }
   }
