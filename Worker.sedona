@@ -28,7 +28,8 @@ abstract internal class Worker extends Component
   
   define int Disconnected = 0
   define int Connected = 1
-  define Str NetworkStatus = "Disconnected, Connected"
+  define int Connecting = 2
+  define Str NetworkStatus = "Disconnected, Connected, Connecting"
   @range=NetworkStatus
   @readonly property byte status = Disconnected
   
@@ -126,7 +127,7 @@ abstract internal class Worker extends Component
       {
         if (status == Connected)
           MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) established")
-        else
+        if (status == Disconnected)
           MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) lost")
       }
     }
@@ -149,11 +150,13 @@ abstract internal class Worker extends Component
   ** 
   action void connect()
   {
-    if (error != Ok || status == Connected || handle != null)
+    if (error != Ok || status != Disconnected || handle != null)
       return
 
     handle = startSession(host.toStr(), port, clientid.toStr(), username.toStr(), password.toStr())
     sessionStartTime = Sys.ticks()
+    sessionConnecting = true
+    status := Connecting
   }
 
   ** 
@@ -175,6 +178,7 @@ abstract internal class Worker extends Component
       return
     stopSession(handle)
     sessionStartTime = 0L
+    sessionConnecting = false
     handle = null
     resetAllChildren()
   }
@@ -184,19 +188,22 @@ abstract internal class Worker extends Component
   **
   private void updateStatus() 
   {
+    int off_state
+    off_state = sessionConnecting ? Connecting : Disconnected
+
     if (handle == null)
-      status := Disconnected
+      status := off_state
     else
-      status := isSessionLive(handle) ? Connected : Disconnected 
+      status := isSessionLive(handle) ? Connected : off_state
   }
   
   virtual bool work()
   {
     updateStatus()
-    if (status == Disconnected)
+    if (status != Connected)
     {
       // if session failed to start within sessionTimeout seconds
-      if (handle != null && Sys.ticks()-sessionStartTime>sessionTimeout)
+      if (handle != null && sessionConnecting && Sys.ticks()-sessionStartTime>sessionTimeout)
       {
         MQTTService service = (MQTTService)Sys.app.lookupService(MQTTService.type)
         if (service == null)
@@ -208,7 +215,7 @@ abstract internal class Worker extends Component
         retryStartTime = Sys.ticks()
       }
       
-      if (handle == null) {
+      if ((handle == null) && sessionConnecting) {
         //exponential backoff 
         if (Sys.ticks()-retryStartTime > 1sec*power(retryTimes)) {
           retryStartTime = Sys.ticks()
@@ -221,7 +228,8 @@ abstract internal class Worker extends Component
     }
     else
       retryTimes = 0
-        
+
+    sessionConnecting = false
     for(Component child = Sys.app.lookup(children); child != null; child = Sys.app.lookup(child.nextSibling))
     {
       if (child.type.is(Message.type)) {
@@ -251,7 +259,8 @@ abstract internal class Worker extends Component
   ** MQTT Session Handle Object
   ** 
   protected Obj handle = null
-  
+
+  private bool sessionConnecting = false
   private long sessionStartTime = 0L
   private long sessionTimeout = 30sec
 }
