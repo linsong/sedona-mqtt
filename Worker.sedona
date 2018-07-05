@@ -163,7 +163,16 @@ abstract internal class Worker extends Component
   {
     if (handle == null || status == Disconnected)
       return
+    stopWorker()
+  }
 
+  **
+  ** close the current MQTT session and disconnect to MQTT broker
+  **
+  private void stopWorker()
+  {
+    if (handle == null)
+      return
     stopSession(handle)
     sessionStartTime = 0L
     handle = null
@@ -194,10 +203,7 @@ abstract internal class Worker extends Component
           App.log.error("MQTTService is missing")
         else
           MQTTService.log.message("session times out, stop session now ...")
-        stopSession(handle)
-        sessionStartTime = 0L
-        handle = null
-        resetAllChildren()
+        stopWorker()
 
         retryStartTime = Sys.ticks()
       }
