@@ -22,7 +22,7 @@ abstract internal class Worker extends Component
   define int Err_InvalidPort = 3
   define int Err_InvalidClientId = 4
 
-  define Str WorkerError = "Ok, Invaid Parent, Invalid Host, Invalid Port, Invalid ClientId"
+  define Str WorkerError = "Ok, InvalidParent, InvalidHost, InvalidPort, InvalidClientId"
   @range=WorkerError
   @readonly property byte error = 0
   

@@ -14,7 +14,7 @@ abstract internal class Message extends Component
   define int Ok = 0
   define int Err_InvalidParent = 1
   define int Err_InvalidTopic = 2
-  define Str ErrorMessages = "Ok, Invalid Parent, Invalid Topic"
+  define Str ErrorMessages = "Ok, InvalidParent, InvalidTopic"
 
   @range=ErrorMessages
   @readonly property byte error = 0
