@@ -131,7 +131,19 @@ abstract internal class Worker extends Component
       }
     }
   }
-  
+
+
+  **
+  ** disconnect and reconnect to MQTT broker
+  **
+  action void reconnect()
+  {
+    disconnect();
+    updateStatus();
+    connect();
+  }
+
+
   ** 
   ** connect to MQTT broker and start a new session
   ** 
