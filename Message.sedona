@@ -187,12 +187,14 @@ abstract internal class Message extends Component
   ////////////////////////////////////////////////////////////////
   // Fields
   ////////////////////////////////////////////////////////////////
+  define int strLen = 64
+
   private bool readyToPublish = false
   private bool subscribedToTopic = false
   private long lastPublishTime = 0L
   private long lastUpdateTime = 0L
   
-  protected inline Str(64) strBuf = ""; 
+  protected inline Str(strLen) strBuf = "";
 
   internal define Log log
 }

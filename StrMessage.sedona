@@ -17,7 +17,7 @@
 ** 
 class StrMessage extends Message
 {
-  @asStr property Buf(64) payload;
+  @asStr property Buf(Message.strLen) payload;
   
   ** 
   ** return the payload string, 
