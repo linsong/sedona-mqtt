@@ -80,6 +80,12 @@ abstract internal class Worker extends Component
       connect()
   }
 
+
+  private void log(Str s)
+  {
+    MQTTService.log.message("connection(${host.toStr()}:${port}, ${clientid.toStr()}) ${s}")
+  }
+
   override virtual void start() 
   {
     validateInputs()
@@ -126,9 +132,9 @@ abstract internal class Worker extends Component
       else
       {
         if (status == Connected)
-          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}, ${clientid.toStr()}) established")
+          log("established")
         if (status == Disconnected) {
-          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}, ${clientid.toStr()}) lost")
+          log("lost")
           stopWorker()
         }
       }
@@ -211,7 +217,7 @@ abstract internal class Worker extends Component
         if (service == null)
           App.log.error("MQTTService is missing")
         else
-          MQTTService.log.message("session with clientid ${clientid.toStr()} times out, stop session now ...")
+          log("timeout, stop session now ...")
         stopWorker()
 
         retryStartTime = Sys.ticks()
@@ -222,7 +228,7 @@ abstract internal class Worker extends Component
         if (Sys.ticks()-retryStartTime > 1sec*power(retryTimes)) {
           retryStartTime = Sys.ticks()
           if (retryTimes < 8) retryTimes += 1
-          MQTTService.log.message("reconnect ...")
+          log("reconnect ...")
           connect()
         }
       }
