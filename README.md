@@ -66,8 +66,8 @@ Create a communityMQTT::Publisher or CommunityMQTT::Subscriber object just under
 - if you don't have a working sedona source folder, then check out a copy from [here](https://github.com/linsong/sedona, "Sedona Community Version"), and make sure you can build sedonac and svm successfully
 - clone a copy of this kit under "sedona/src/kits" folder
 - make sure current directory is "sedona", then run script "src/kits/communityMQTT/setup_env.sh". it will set up the sedona environment before building the kit. Note, you only need to run this script *once*.
+- run "sedonac src/kits/communityMQTT/kit.xml" to build this kit
 - run "makeunixvm" to rebuild svm since this kit is native kit
-- last, run "sedonac src/kit/communitMQTT/kit.xml" to build this kit
 
 ## Dependecy
 * [MQTT Embedded C Library](https://github.com/eclipse/paho.mqtt.embedded-c) (dual licensed under the EPL and EDL)
