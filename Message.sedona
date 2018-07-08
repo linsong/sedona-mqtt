@@ -14,7 +14,7 @@ abstract internal class Message extends Component
   define int Ok = 0
   define int Err_InvalidParent = 1
   define int Err_InvalidTopic = 2
-  define Str ErrorMessages = "Ok, Invalid Parent, Invalid Topic"
+  define Str ErrorMessages = "Ok, InvalidParent, InvalidTopic"
 
   @range=ErrorMessages
   @readonly property byte error = 0
@@ -95,7 +95,7 @@ abstract internal class Message extends Component
       return
 
     Str msg = getPayload()
-    doPublish(handle, topic.toStr(), msg, msg.length()+1, QoS)
+    doPublish(handle, topic.toStr(), msg, msg.length(), QoS)
 
     lastPublishTime = Sys.ticks()
     readyToPublish = false
@@ -187,12 +187,14 @@ abstract internal class Message extends Component
   ////////////////////////////////////////////////////////////////
   // Fields
   ////////////////////////////////////////////////////////////////
+  define int strLen = 64
+
   private bool readyToPublish = false
   private bool subscribedToTopic = false
   private long lastPublishTime = 0L
   private long lastUpdateTime = 0L
   
-  protected inline Str(64) strBuf = ""; 
+  protected inline Str(strLen) strBuf = "";
 
   internal define Log log
 }

@@ -22,13 +22,14 @@ abstract internal class Worker extends Component
   define int Err_InvalidPort = 3
   define int Err_InvalidClientId = 4
 
-  define Str WorkerError = "Ok, Invaid Parent, Invalid Host, Invalid Port, Invalid ClientId"
+  define Str WorkerError = "Ok, InvalidParent, InvalidHost, InvalidPort, InvalidClientId"
   @range=WorkerError
   @readonly property byte error = 0
   
   define int Disconnected = 0
   define int Connected = 1
-  define Str NetworkStatus = "Disconnected, Connected"
+  define int Connecting = 2
+  define Str NetworkStatus = "Disconnected, Connected, Connecting"
   @range=NetworkStatus
   @readonly property byte status = Disconnected
   
@@ -79,6 +80,12 @@ abstract internal class Worker extends Component
       connect()
   }
 
+
+  private void log(Str s)
+  {
+    MQTTService.log.message("connection(${host.toStr()}:${port}, ${clientid.toStr()}) ${s}")
+  }
+
   override virtual void start() 
   {
     validateInputs()
@@ -125,23 +132,39 @@ abstract internal class Worker extends Component
       else
       {
         if (status == Connected)
-          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) established")
-        else
-          MQTTService.log.message("MQTT connection(${host.toStr()}:${port}) lost")
+          log("established")
+        if (status == Disconnected) {
+          log("lost")
+          stopWorker()
+        }
       }
     }
   }
-  
+
+
+  **
+  ** disconnect and reconnect to MQTT broker
+  **
+  action void reconnect()
+  {
+    disconnect();
+    updateStatus();
+    connect();
+  }
+
+
   ** 
   ** connect to MQTT broker and start a new session
   ** 
   action void connect()
   {
-    if (error != Ok || status == Connected || handle != null)
+    if (error != Ok || status != Disconnected || handle != null)
       return
 
     handle = startSession(host.toStr(), port, clientid.toStr(), username.toStr(), password.toStr())
     sessionStartTime = Sys.ticks()
+    sessionConnecting = true
+    status := Connecting
   }
 
   ** 
@@ -151,9 +174,19 @@ abstract internal class Worker extends Component
   {
     if (handle == null || status == Disconnected)
       return
+    stopWorker()
+  }
 
+  **
+  ** close the current MQTT session and disconnect to MQTT broker
+  **
+  private void stopWorker()
+  {
+    if (handle == null)
+      return
     stopSession(handle)
     sessionStartTime = 0L
+    sessionConnecting = false
     handle = null
     resetAllChildren()
   }
@@ -163,39 +196,39 @@ abstract internal class Worker extends Component
   **
   private void updateStatus() 
   {
+    int off_state
+    off_state = sessionConnecting ? Connecting : Disconnected
+
     if (handle == null)
-      status := Disconnected
+      status := off_state
     else
-      status := isSessionLive(handle) ? Connected : Disconnected 
+      status := isSessionLive(handle) ? Connected : off_state
   }
   
   virtual bool work()
   {
     updateStatus()
-    if (status == Disconnected)
+    if (status != Connected)
     {
       // if session failed to start within sessionTimeout seconds
-      if (handle != null && Sys.ticks()-sessionStartTime>sessionTimeout)
+      if (handle != null && sessionConnecting && Sys.ticks()-sessionStartTime>sessionTimeout)
       {
         MQTTService service = (MQTTService)Sys.app.lookupService(MQTTService.type)
         if (service == null)
           App.log.error("MQTTService is missing")
         else
-          MQTTService.log.message("session times out, stop session now ...")
-        stopSession(handle)
-        sessionStartTime = 0L
-        handle = null
-        resetAllChildren()
+          log("timeout, stop session now ...")
+        stopWorker()
 
         retryStartTime = Sys.ticks()
       }
       
-      if (handle == null) {
+      if ((handle == null) && sessionConnecting) {
         //exponential backoff 
         if (Sys.ticks()-retryStartTime > 1sec*power(retryTimes)) {
           retryStartTime = Sys.ticks()
           if (retryTimes < 8) retryTimes += 1
-          MQTTService.log.message("reconnect ...")
+          log("reconnect ...")
           connect()
         }
       }
@@ -203,7 +236,8 @@ abstract internal class Worker extends Component
     }
     else
       retryTimes = 0
-        
+
+    sessionConnecting = false
     for(Component child = Sys.app.lookup(children); child != null; child = Sys.app.lookup(child.nextSibling))
     {
       if (child.type.is(Message.type)) {
@@ -233,7 +267,8 @@ abstract internal class Worker extends Component
   ** MQTT Session Handle Object
   ** 
   protected Obj handle = null
-  
+
+  private bool sessionConnecting = false
   private long sessionStartTime = 0L
   private long sessionTimeout = 30sec
 }

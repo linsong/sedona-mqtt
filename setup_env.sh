@@ -21,5 +21,5 @@ sed -i'' -e '\#<target name="logManager" />#a \
 \ \ <target name="communityMQTT" /> \
   ' src/kits/dir.xml
 
-echo "patching adm/unix/makeunixvm.py ..."
-sed -i'' -e 's#libs = \[\]#libs = ["pthread"]#' adm/unix/makeunixvm.py
+echo "patching adm/unix/compileunix.py ..."
+sed -i'' -e 's# -O2# -O2 -pthread#' adm/unix/compileunix.py

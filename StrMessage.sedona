@@ -17,7 +17,7 @@
 ** 
 class StrMessage extends Message
 {
-  @asStr property Buf(64) payload;
+  @asStr property Buf(Message.strLen) payload;
   
   ** 
   ** return the payload string, 
@@ -36,6 +36,7 @@ class StrMessage extends Message
       return result
 
     payload.copyFromStr(strBuf)
+    payload.size = strBuf.length() + 1;
     changed(StrMessage.payload)
     return result
   }
