@@ -19,3 +19,6 @@ sedona*.zip
 tags
 manifests
 _tmp_*
+*.png
+*.jpg
+*.gif

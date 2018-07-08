@@ -1,0 +1,16 @@
+digraph finite_state_machine {
+  rankdir = LR;
+  size = "8,5";
+  node [ shape = circle ];
+  Disconnected [ color=lightgrey,style=filled ];
+
+  Disconnected -> Connecting [ label = "connect" ]
+  Connecting -> Connected    [ label = "establish" ]
+  Connecting -> Timeout     [ label = "timeout" ]
+  Connected -> Timeout      [ label = "timeout" ]
+  Timeout -> Connecting     [ label = "retry" ]
+
+  Connecting -> Disconnected [ label = "disconnect" ]
+  Connected -> Disconnected  [ label = "disconnect" ]
+  Timeout -> Disconnected   [ label = "disconnect" ]
+}
