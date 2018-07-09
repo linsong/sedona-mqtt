@@ -6,7 +6,7 @@
 ** 
 class Publisher extends Worker
 {
-  protected override void doWork(Message m) 
+  protected override void doWork(MessageCommon m)
   {
     if (m != null)
       m.publish(handle) 

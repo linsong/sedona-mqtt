@@ -37,7 +37,7 @@ abstract internal class Worker extends Component
   ////////////////////////////////////////////////////////////////
   // Methods
   ////////////////////////////////////////////////////////////////
-  abstract void doWork(Message m) 
+  abstract void doWork(MessageCommon m)
   
   // natives 
   **
@@ -104,8 +104,8 @@ abstract internal class Worker extends Component
   {
     for(Component child = Sys.app.lookup(children); child != null; child = Sys.app.lookup(child.nextSibling))
     {
-      if (child.type.is(Message.type)) {
-        Message m = (Message)child
+      if (child.type.is(MessageCommon.type)) {
+        MessageCommon m = (MessageCommon)child
         m.reset()
       }
     }
@@ -270,10 +270,9 @@ abstract internal class Worker extends Component
 
     for(Component child = Sys.app.lookup(children); child != null; child = Sys.app.lookup(child.nextSibling))
     {
-      if (child.type.is(Message.type)) {
-        Message m = (Message)child
-        if (m.error == Message.Ok)
-          doWork(m)
+      if (child.type.is(MessageCommon.type)) {
+        MessageCommon m = (MessageCommon)child
+        doWork(m)
       }
     }
     
@@ -285,6 +284,11 @@ abstract internal class Worker extends Component
     for(int i=0; i<val; ++i)
       result *= 2L;
     return result;
+  }
+
+  Obj getHandle()
+  {
+    return handle
   }
 
   ////////////////////////////////////////////////////////////////

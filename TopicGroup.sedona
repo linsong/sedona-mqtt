@@ -1,0 +1,147 @@
+// Hey, emacs! -*- c++ -*-
+//
+// Copyright 2018 Andrey Skvortsov <andrej.skvortzov@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+class TopicGroup extends MessageCommon
+{
+
+  ////////////////////////////////////////////////////////////////
+  // Methods
+  ////////////////////////////////////////////////////////////////
+  private void propagatePrefixToChildren() {
+    for(Component child = Sys.app.lookup(children); child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.updatePrefix(fullTopicName)
+      }
+    }
+  }
+
+  protected virtual override void updatePrefix(Str prefix)
+  {
+    super.updatePrefix(prefix)
+    propagatePrefixToChildren()
+  }
+
+  internal virtual override void updateFullName()
+  {
+    super.updateFullName()
+  }
+
+  virtual override void changed(Slot slot)
+  {
+    super.changed(slot)
+    if (slot.name == "topic")
+      propagatePrefixToChildren()
+  }
+
+  **
+  ** reset current messages local state
+  **
+  internal virtual override void reset()
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.reset()
+      }
+    }
+  }
+
+  **
+  ** publish linked value to MQTT broker
+  **
+  internal virtual override void publish(Obj handle)
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.publish(handle)
+      }
+    }
+  }
+
+  **
+  ** subscribe topic on MQTT broker refered by given handle
+  **
+  internal virtual override void subscribe(Obj handle)
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.subscribe(handle)
+      }
+    }
+  }
+
+  **
+  ** unsubscribe topic on MQTT broker refered by given handle
+  **
+  internal virtual override void unsubscribe(Obj handle)
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.unsubscribe(handle)
+      }
+    }
+  }
+
+  private Obj getHandle()
+  {
+    Component parentComp = Sys.app.lookup(parent)
+    if (parentComp.type.is(Worker.type)) {
+      Worker w = (Worker)parentComp
+      return w.getHandle()
+    }
+
+    if (parentComp.type.is(TopicGroup.type)) {
+      TopicGroup t = (TopicGroup)parentComp
+      return t.getHandle()
+    }
+
+    return null
+  }
+
+  **
+  ** unsubscribe topic on MQTT broker refered by given handle
+  **
+  override int childEvent(int eType, Component child)
+  {
+    if (error != Ok)
+      return 0
+    Obj handle = getHandle()
+    if (eType == Component.REMOVED && child.type.is(MessageCommon.type)) {
+      ((MessageCommon) child).unsubscribe(handle);
+    }
+    return 0
+  }
+
+}
