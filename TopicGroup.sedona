@@ -24,7 +24,7 @@ class TopicGroup extends MessageCommon
   **
   ** reset current messages local state
   **
-  internal override void reset()
+  public override void reset()
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -40,7 +40,7 @@ class TopicGroup extends MessageCommon
   **
   ** publish linked value to MQTT broker
   **
-  internal override void publish(Obj handle)
+  public override void publish(Obj handle)
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -56,7 +56,7 @@ class TopicGroup extends MessageCommon
   **
   ** subscribe topic on MQTT broker refered by given handle
   **
-  internal override void subscribe(Obj handle)
+  public override void subscribe(Obj handle)
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -72,7 +72,7 @@ class TopicGroup extends MessageCommon
   **
   ** unsubscribe topic on MQTT broker refered by given handle
   **
-  internal override void unsubscribe(Obj handle)
+  public override void unsubscribe(Obj handle)
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -111,7 +111,9 @@ class TopicGroup extends MessageCommon
       return 0
 
     if (eType == Component.REMOVED && child.type.is(MessageCommon.type)) {
-      ((MessageCommon) child).unsubscribe(getHandle());
+      Obj handle = getHandle()
+      if (handle != null)
+        ((MessageCommon) child).unsubscribe(handle);
     }
     return 0
   }

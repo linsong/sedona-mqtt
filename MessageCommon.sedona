@@ -21,24 +21,24 @@ abstract internal class MessageCommon extends Component
   **
   ** reset current message's local state
   **
-  internal abstract void reset()
+  public abstract void reset()
 
   **
   ** publish linked value to MQTT broker
   **
-  internal abstract void publish(Obj handle)
+  public abstract void publish(Obj handle)
 
   **
   ** subscribe topic on MQTT broker refered by given handle
   **
-  internal abstract void subscribe(Obj handle)
+  public abstract void subscribe(Obj handle)
 
   **
   ** unsubscribe topic on MQTT broker refered by given handle
   **
-  internal abstract void unsubscribe(Obj handle)
+  public abstract void unsubscribe(Obj handle)
 
-  internal virtual void onTopicChanged() {}
+  public virtual void onTopicChanged() {}
 
   ////////////////////////////////////////////////////////////////
   // Methods
