@@ -10,15 +10,15 @@ class Subscriber extends Worker
 {
   override int childEvent(int eType, Component child)
   {
-    if (eType == Component.REMOVED && child.type.is(Message.type)) {
-      ((Message)child).unsubscribe(handle);   
+    if (eType == Component.REMOVED && child.type.is(MessageCommon.type) && handle != null) {
+      ((MessageCommon)child).unsubscribe(handle);
     }
     return 0
   }
   
-  protected override void doWork(Message m) 
+  protected override void doWork(MessageCommon m)
   {
-    if (m != null)
+    if (m != null && handle != null)
       m.subscribe(handle) 
   }
 

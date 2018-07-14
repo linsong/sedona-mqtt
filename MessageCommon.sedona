@@ -1,0 +1,145 @@
+@palette=false
+abstract internal class MessageCommon extends Component
+{
+  ////////////////////////////////////////////////////////////////
+  // Properties
+  ////////////////////////////////////////////////////////////////
+  @summary=true
+  @config @asStr property Buf(topicNameLen) topic = ""
+
+  define int Ok = 0
+  define int Err_InvalidParent = 1
+  define int Err_InvalidTopic = 2
+  define Str ErrorMessages = "Ok, InvalidParent, InvalidTopic"
+
+  @range=ErrorMessages
+  @readonly property byte error = 0
+
+  ////////////////////////////////////////////////////////////////
+  // Interface Methods
+  ////////////////////////////////////////////////////////////////
+  **
+  ** reset current message's local state
+  **
+  public abstract void reset()
+
+  **
+  ** publish linked value to MQTT broker
+  **
+  public abstract void publish(Obj handle)
+
+  **
+  ** subscribe topic on MQTT broker refered by given handle
+  **
+  public abstract void subscribe(Obj handle)
+
+  **
+  ** unsubscribe topic on MQTT broker refered by given handle
+  **
+  public abstract void unsubscribe(Obj handle)
+
+  public virtual void onTopicChanged() {}
+
+  ////////////////////////////////////////////////////////////////
+  // Methods
+  ////////////////////////////////////////////////////////////////
+  override virtual void start() 
+  {
+    validateInputs()
+  }
+
+  override virtual void changed(Slot slot)
+  {
+    super.changed(slot)
+    if (slot.name == "topic")
+    {
+      validateInputs()
+      if (error == Ok)
+        onTopicChanged()
+    }
+  }
+
+  protected void validateInputs()
+  {
+    Component parentComponent = Sys.app.lookup(parent)
+    Str parentName = parentComponent?.type?.name
+    if (!parentComponent.type.is(Publisher.type) &&
+        !parentComponent.type.is(Subscriber.type) &&
+        !parentComponent.type.is(TopicGroup.type))
+    {
+      error := Err_InvalidParent;
+    }
+    else if (topic.toStr().length() > 0)
+    {
+      if (parentComponent.type.is(TopicGroup.type))
+        error := ((TopicGroup)parentComponent).error
+      else
+        error := Ok
+    }
+    else
+      error := Err_InvalidTopic
+  }
+
+  static private bool appendStr(Str dst, Str src, int maxDstLen)
+  {
+    bool res = true;
+    int startIndx = dst.length()
+    int bytesCopy = src.length()
+    bytesCopy = bytesCopy + 1
+    if ((dst.length() + bytesCopy) > maxDstLen)
+    {
+      bytesCopy = maxDstLen - dst.length()
+      res = false
+    }
+
+    for(int i = 0; i < bytesCopy; i++)
+      dst.set(startIndx + i, src.get(i))
+
+    return res
+  }
+
+  protected void collectTopics(Str buf, int maxBufLen)
+  {
+    Component parentComp = Sys.app.lookup(parent)
+    if (parentComp!=null && parentComp.type.is(MessageCommon.type))
+    {
+      MessageCommon parentMsg = (MessageCommon)parentComp
+      parentMsg.collectTopics(buf, maxBufLen)
+    }
+
+    //make sure topics are connected with '/'
+    if (buf.length() > 0 && buf.get(buf.length()-1) != '/' && topic.get(0) != '/')
+      appendStr(buf, "/", maxBufLen);
+
+    appendStr(buf, topic.toStr(), maxBufLen);
+  }
+
+  protected Obj getHandle()
+  {
+    Component parentComp = Sys.app.lookup(parent)
+    while(parentComp!=null) 
+    {
+      if (parentComp.type.is(Worker.type)) {
+        Worker w = (Worker)parentComp
+        return w.getHandle()
+      }
+      parentComp = Sys.app.lookup(parentComp.parent)
+    }
+    return null
+  }
+
+  override int parentEvent(int eType, Component parent)
+  {
+    if (eType == Component.ADDED &&
+        (!parent.type.is(Publisher.type) &&
+         !parent.type.is(Subscriber.type)&&
+         !parent.type.is(TopicGroup.type)))
+      error := Err_InvalidParent;
+    return 0
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // Fields
+  ////////////////////////////////////////////////////////////////
+  define int topicNameLen = 64 
+}

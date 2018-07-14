@@ -1,5 +1,5 @@
 @palette=false
-abstract internal class Message extends Component
+abstract internal class Message extends MessageCommon
 {
   ////////////////////////////////////////////////////////////////
   // Properties
@@ -9,16 +9,6 @@ abstract internal class Message extends Component
   @range=QoSLevels
   @config property byte QoS = 0
 
-  @config @asStr property Buf(16) topic = ""
-
-  define int Ok = 0
-  define int Err_InvalidParent = 1
-  define int Err_InvalidTopic = 2
-  define Str ErrorMessages = "Ok, InvalidParent, InvalidTopic"
-
-  @range=ErrorMessages
-  @readonly property byte error = 0
-  
   // 0: publish when changed; 1000: publish per 1 sec; 2000: per 2 secs; 3000: ...
   @unit=Units.millisecond
   @config property int publishInterval = 5000
@@ -42,26 +32,9 @@ abstract internal class Message extends Component
   static native void doUnsubscribe(Obj handle, Str topic)
   static native bool fetchData(Obj handle, Str topic, Str buf, int length);
 
-  protected virtual Str getPayload() { return "" }
+  protected virtual Str getPayload() { return null }
 
-  private void validateInputs() 
-  {
-    Component parentComponent = Sys.app.lookup(parent)
-    Str parentName = parentComponent?.type?.name
-    if (!parentComponent.type.is(Publisher.type) && !parentComponent.type.is(Subscriber.type))
-      error := Err_InvalidParent; 
-    else if (topic.toStr().length() > 0)
-      error := Ok
-    else
-      error := Err_InvalidTopic
-  }
-  
-  override virtual void start() 
-  {
-    validateInputs()
-  }
-  
-  override virtual void execute()
+  virtual override void execute()
   {
     if (error != Ok)
       return
@@ -70,17 +43,10 @@ abstract internal class Message extends Component
       readyToPublish = (Sys.ticks()-lastPublishTime) >= (long)publishInterval*1ms
   }
   
-  override int parentEvent(int eType, Component parent)
-  {
-    if (eType == Component.ADDED && (!parent.type.is(Publisher.type) && !parent.type.is(Subscriber.type)))
-      error := Err_InvalidParent; 
-    return 0
-  }
-  
   ** 
   ** publish linked value to MQTT broker
   ** 
-  internal virtual void publish(Obj handle)
+  public override virtual void publish(Obj handle)
   {
     if (error != Ok)
       return
@@ -95,25 +61,40 @@ abstract internal class Message extends Component
       return
 
     Str msg = getPayload()
-    doPublish(handle, topic.toStr(), msg, msg.length(), QoS)
+    if (msg == null)
+      return
 
+    if (topicChanged) 
+    {
+      fullTopicName.set(0, 0)
+      topicChanged = false
+    }
+
+    Str fullTopic = getFullTopic()
+    if (fullTopic == null)
+      return
+
+    doPublish(handle, fullTopic, msg, msg.length(), QoS)
     lastPublishTime = Sys.ticks()
     readyToPublish = false
   }
   
   ** 
-  ** update local slot data from subscribed data 
+  ** update local slot data from subscribed data
   ** 
   protected virtual bool updateData(Obj handle)
   {
-    bool result = fetchData(handle, topic.toStr(), strBuf, 63)
+    if (fullTopicName.length() == 0)
+      return false
+
+    bool result = fetchData(handle, fullTopicName, strBuf, strLen-1)
     return result
   }
   
   ** 
   ** subscribe topic on MQTT broker refered by given handle
   ** 
-  internal virtual void subscribe(Obj handle)
+  public override virtual void subscribe(Obj handle)
   {
     if (error != Ok)
       return
@@ -123,6 +104,9 @@ abstract internal class Message extends Component
       log.message("SUBSCRIBE: null handle")
       return
     }
+
+    if (topicChanged)
+      unsubscribe(handle)
 
     if (subscribedToTopic)
     {
@@ -134,8 +118,12 @@ abstract internal class Message extends Component
     }
     else
     {
-      log.message("SUBSCRIBE: topic=${topic.toStr()}")
-      doSubscribe(handle, topic.toStr(), QoS);
+      Str fullTopic = getFullTopic()
+      if (fullTopic == null)
+        return
+
+      log.message("SUBSCRIBE: topic=${fullTopic}")
+      doSubscribe(handle, fullTopic, QoS)
       subscribedToTopic = true
     }
   }
@@ -143,7 +131,7 @@ abstract internal class Message extends Component
   ** 
   ** unsubscribe topic on MQTT broker refered by given handle
   ** 
-  internal virtual void unsubscribe(Obj handle)
+  public override virtual void unsubscribe(Obj handle)
   {
     if (error != Ok)
       return
@@ -154,47 +142,74 @@ abstract internal class Message extends Component
       return
     }
 
-    if (!subscribedToTopic)
-      return
-    
-    log.message("UNSUBSCRIBE: topic=${topic.toStr()}")
-    doUnsubscribe(handle, topic.toStr());
-    subscribedToTopic = false
+    topicChanged = false
+    if (subscribedToTopic)
+    {
+      log.message("UNSUBSCRIBE: topic=${fullTopicName}")
+      doUnsubscribe(handle, fullTopicName)
+      subscribedToTopic = false
+    }
+    fullTopicName.set(0, 0)
   }
-  
-  virtual override void changed(Slot slot) 
+
+  **
+  ** mark unscription needed, the topic will be unsubscribed when worker instance call us 
+  ** 
+  public override virtual void onTopicChanged()
+  {
+    super.onTopicChanged()
+    topicChanged = true
+  }
+
+  internal override virtual void changed(Slot slot) 
   {
     super.changed(slot)
-    if (slot.name == "topic")
-      validateInputs()
-    else {
-      if (error == Ok && slot.name == "payload" && publishInterval != 0)
-        readyToPublish = true
-    }
+    if (error == Ok && slot.name == "payload" && publishInterval == 0)
+      readyToPublish = true
   }
   
   ** 
   ** reset current message's local state 
   ** 
-  internal virtual void reset()
+  public override virtual void reset()
   {
     readyToPublish = false
     subscribedToTopic = false
+    topicChanged = false
     lastPublishTime = 0L
     lastUpdateTime = 0L
   }
 
+  protected Str getFullTopic() 
+  {
+    if (fullTopicName.length() == 0)
+      generateFullTopic()
+    return fullTopicName
+  }
+
+  protected void generateFullTopic()
+  {
+    //unsubscribe old topic if needed
+    if (fullTopicName.length() > 0 && subscribedToTopic)
+      unsubscribe(getHandle())
+
+    fullTopicName.set(0, 0)
+    collectTopics(fullTopicName, fullTopicNameLen)
+  }
   ////////////////////////////////////////////////////////////////
   // Fields
   ////////////////////////////////////////////////////////////////
   define int strLen = 64
+  define int fullTopicNameLen = 400
 
   private bool readyToPublish = false
   private bool subscribedToTopic = false
+  private bool topicChanged = false
   private long lastPublishTime = 0L
   private long lastUpdateTime = 0L
   
-  protected inline Str(strLen) strBuf = "";
+  protected inline Str(strLen) strBuf = ""
+  protected inline Str(fullTopicNameLen) fullTopicName = ""
 
   internal define Log log
 }

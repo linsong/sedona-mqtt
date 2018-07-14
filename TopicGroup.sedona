@@ -1,0 +1,103 @@
+class TopicGroup extends MessageCommon
+{
+
+  ////////////////////////////////////////////////////////////////
+  // Interface Methods
+  ////////////////////////////////////////////////////////////////
+  **
+  ** reset current messages local state
+  **
+  public override void reset()
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.reset()
+      }
+    }
+  }
+
+  **
+  ** publish linked value to MQTT broker
+  **
+  public override void publish(Obj handle)
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.publish(handle)
+      }
+    }
+  }
+
+  **
+  ** subscribe topic on MQTT broker refered by given handle
+  **
+  public override void subscribe(Obj handle)
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.subscribe(handle)
+      }
+    }
+  }
+
+  **
+  ** unsubscribe topic on MQTT broker refered by given handle
+  **
+  public override void unsubscribe(Obj handle)
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.unsubscribe(handle)
+      }
+    }
+  }
+
+
+  ** 
+  ** call onTopicChanged on all MessageCommon children
+  **
+  override virtual void onTopicChanged() 
+  {
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.onTopicChanged()
+      }
+    }
+  }
+
+  **
+  ** unsubscribe topic on MQTT broker refered by given handle
+  **
+  override int childEvent(int eType, Component child)
+  {
+    if (error != Ok)
+      return 0
+
+    if (eType == Component.REMOVED && child.type.is(MessageCommon.type)) {
+      Obj handle = getHandle()
+      if (handle != null)
+        ((MessageCommon) child).unsubscribe(handle);
+    }
+    return 0
+  }
+}

@@ -1,5 +1,5 @@
 @palette=false
-internal class MQTTServiceTest extends Test
+public class MQTTServiceTest extends Test
 {
   static Publisher createPublisher(MQTTService s) 
   {
