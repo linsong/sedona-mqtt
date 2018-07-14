@@ -5,7 +5,7 @@ abstract internal class MessageCommon extends Component
   // Properties
   ////////////////////////////////////////////////////////////////
   @summary=true
-  @config @asStr property Buf(fullTopicNameLen) topic = ""
+  @config @asStr property Buf(topicNameLen) topic = ""
 
   define int Ok = 0
   define int Err_InvalidParent = 1
@@ -16,74 +16,47 @@ abstract internal class MessageCommon extends Component
   @readonly property byte error = 0
 
   ////////////////////////////////////////////////////////////////
-  // Methods
+  // Interface Methods
   ////////////////////////////////////////////////////////////////
   **
   ** reset current message's local state
   **
-  internal virtual void reset() {
-  }
+  internal abstract void reset()
 
   **
   ** publish linked value to MQTT broker
   **
-  internal virtual void publish(Obj handle)
-  {
-  }
+  internal abstract void publish(Obj handle)
 
   **
   ** subscribe topic on MQTT broker refered by given handle
   **
-  internal virtual void subscribe(Obj handle)
-  {
-  }
+  internal abstract void subscribe(Obj handle)
 
   **
   ** unsubscribe topic on MQTT broker refered by given handle
   **
-  internal virtual void unsubscribe(Obj handle)
-  {
-  }
+  internal abstract void unsubscribe(Obj handle)
 
-  internal virtual void updateFullName()
+  internal virtual void onTopicChanged() {}
+
+  ////////////////////////////////////////////////////////////////
+  // Methods
+  ////////////////////////////////////////////////////////////////
+  override virtual void start() 
   {
-    fullTopicName.copyFromStr(prefixName, fullTopicNameLen)
-    if (prefixName.length() != 0)
-      appendStr(fullTopicName, "/", fullTopicNameLen)
-    appendStr(fullTopicName, topic.toStr(), fullTopicNameLen)
     validateInputs()
   }
 
-  protected virtual void updatePrefix(Str prefix)
-  {
-    prefixName.copyFromStr(prefix, fullTopicNameLen)
-    updateFullName()
-  }
-
-
-  static private bool appendStr(Str dst, Str src, int maxDstLen)
-  {
-    bool res = true;
-    int startIndx = dst.length()
-    int bytesCopy = src.length()
-    bytesCopy = bytesCopy + 1
-    if ((dst.length() + bytesCopy) > maxDstLen)
-    {
-      bytesCopy = maxDstLen - dst.length()
-      res = false
-    }
-
-    for(int i = 0; i < bytesCopy; i++)
-      dst.set(startIndx + i, src.get(i))
-
-    return res
-  }
-
-  virtual override void changed(Slot slot)
+  override virtual void changed(Slot slot)
   {
     super.changed(slot)
     if (slot.name == "topic")
-      updateFullName()
+    {
+      validateInputs()
+      if (error == Ok)
+        onTopicChanged()
+    }
   }
 
   protected void validateInputs()
@@ -107,38 +80,66 @@ abstract internal class MessageCommon extends Component
       error := Err_InvalidTopic
   }
 
+  static private bool appendStr(Str dst, Str src, int maxDstLen)
+  {
+    bool res = true;
+    int startIndx = dst.length()
+    int bytesCopy = src.length()
+    bytesCopy = bytesCopy + 1
+    if ((dst.length() + bytesCopy) > maxDstLen)
+    {
+      bytesCopy = maxDstLen - dst.length()
+      res = false
+    }
+
+    for(int i = 0; i < bytesCopy; i++)
+      dst.set(startIndx + i, src.get(i))
+
+    return res
+  }
+
+  protected void collectTopics(Str buf, int maxBufLen)
+  {
+    Component parentComp = Sys.app.lookup(parent)
+    if (parentComp!=null && parentComp.type.is(MessageCommon.type))
+    {
+      MessageCommon parentMsg = (MessageCommon)parentComp
+      parentMsg.collectTopics(buf, maxBufLen)
+    }
+
+    //make sure topics are connected with '/'
+    if (buf.length() > 0 && buf.get(buf.length()-1) != '/' && topic.get(0) != '/')
+      appendStr(buf, "/", maxBufLen);
+
+    appendStr(buf, topic.toStr(), maxBufLen);
+  }
+
+  protected Obj getHandle()
+  {
+    Component parentComp = Sys.app.lookup(parent)
+    while(parentComp!=null) 
+    {
+      if (parentComp.type.is(Worker.type)) {
+        Worker w = (Worker)parentComp
+        return w.getHandle()
+      }
+      parentComp = Sys.app.lookup(parentComp.parent)
+    }
+    return null
+  }
 
   override int parentEvent(int eType, Component parent)
   {
     if (eType == Component.ADDED &&
-	(!parent.type.is(Publisher.type) &&
-	 !parent.type.is(Subscriber.type)&&
-	 !parent.type.is(TopicGroup.type)))
+        (!parent.type.is(Publisher.type) &&
+         !parent.type.is(Subscriber.type)&&
+         !parent.type.is(TopicGroup.type)))
       error := Err_InvalidParent;
     return 0
-  }
-
-
-  override virtual void start()
-  {
-    if (fullTopicName.equals(""))
-    {
-      Str prefix = ""
-      Component parentComponent = Sys.app.lookup(parent)
-      if (parentComponent.type.is(TopicGroup.type))
-      {
-        TopicGroup t = (TopicGroup)parentComponent
-        prefix = t.fullTopicName
-      }
-
-      updatePrefix(prefix)
-    }
   }
 
   ////////////////////////////////////////////////////////////////
   // Fields
   ////////////////////////////////////////////////////////////////
-  define int fullTopicNameLen = 400
-  protected inline Str(fullTopicNameLen) prefixName = ""
-  protected inline Str(fullTopicNameLen) fullTopicName = ""
+  define int topicNameLen = 64 
 }

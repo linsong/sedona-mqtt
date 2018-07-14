@@ -32,9 +32,9 @@ abstract internal class Message extends MessageCommon
   static native void doUnsubscribe(Obj handle, Str topic)
   static native bool fetchData(Obj handle, Str topic, Str buf, int length);
 
-  protected virtual Str getPayload() { return "" }
+  protected virtual Str getPayload() { return null }
 
-  override virtual void execute()
+  virtual override void execute()
   {
     if (error != Ok)
       return
@@ -46,7 +46,7 @@ abstract internal class Message extends MessageCommon
   ** 
   ** publish linked value to MQTT broker
   ** 
-  internal virtual override void publish(Obj handle)
+  internal override virtual void publish(Obj handle)
   {
     if (error != Ok)
       return
@@ -61,8 +61,20 @@ abstract internal class Message extends MessageCommon
       return
 
     Str msg = getPayload()
-    doPublish(handle, fullTopicName, msg, msg.length(), QoS)
+    if (msg == null)
+      return
 
+    if (topicChanged) 
+    {
+      fullTopicName.set(0, 0)
+      topicChanged = false
+    }
+
+    Str fullTopic = getFullTopic()
+    if (fullTopic == null)
+      return
+
+    doPublish(handle, fullTopic, msg, msg.length(), QoS)
     lastPublishTime = Sys.ticks()
     readyToPublish = false
   }
@@ -72,6 +84,9 @@ abstract internal class Message extends MessageCommon
   ** 
   protected virtual bool updateData(Obj handle)
   {
+    if (fullTopicName.length() == 0)
+      return false
+
     bool result = fetchData(handle, fullTopicName, strBuf, strLen-1)
     return result
   }
@@ -79,14 +94,8 @@ abstract internal class Message extends MessageCommon
   ** 
   ** subscribe topic on MQTT broker refered by given handle
   ** 
-  internal virtual override void subscribe(Obj handle)
+  internal override virtual void subscribe(Obj handle)
   {
-    if ((handle != null) && unsubscribeNeed)
-    {
-      unsubscribe(handle)
-      unsubscribeNeed = false
-    }
-
     if (error != Ok)
       return
 
@@ -95,6 +104,9 @@ abstract internal class Message extends MessageCommon
       log.message("SUBSCRIBE: null handle")
       return
     }
+
+    if (topicChanged)
+      unsubscribe(handle)
 
     if (subscribedToTopic)
     {
@@ -106,9 +118,12 @@ abstract internal class Message extends MessageCommon
     }
     else
     {
-      log.message("SUBSCRIBE: topic=${fullTopicName}")
-      doSubscribe(handle, fullTopicName, QoS)
-      lastSubscribedTopic.copyFromStr(fullTopicName, fullTopicNameLen)
+      Str fullTopic = getFullTopic()
+      if (fullTopic == null)
+        return
+
+      log.message("SUBSCRIBE: topic=${fullTopic}")
+      doSubscribe(handle, fullTopic, QoS)
       subscribedToTopic = true
     }
   }
@@ -116,9 +131,9 @@ abstract internal class Message extends MessageCommon
   ** 
   ** unsubscribe topic on MQTT broker refered by given handle
   ** 
-  internal virtual override void unsubscribe(Obj handle)
+  internal override virtual void unsubscribe(Obj handle)
   {
-    if ((error != Ok) && !unsubscribeNeed)
+    if (error != Ok)
       return
 
     if (handle == null)
@@ -127,27 +142,26 @@ abstract internal class Message extends MessageCommon
       return
     }
 
-    if (!subscribedToTopic)
-      return
-    
-    log.message("UNSUBSCRIBE: topic=${lastSubscribedTopic}")
-    doUnsubscribe(handle, lastSubscribedTopic);
-    subscribedToTopic = false
+    topicChanged = false
+    if (subscribedToTopic)
+    {
+      log.message("UNSUBSCRIBE: topic=${fullTopicName}")
+      doUnsubscribe(handle, fullTopicName)
+      subscribedToTopic = false
+    }
+    fullTopicName.set(0, 0)
   }
 
-
-  internal virtual override void updateFullName()
+  **
+  ** mark unscription needed, the topic will be unsubscribed when worker instance call us 
+  ** 
+  internal override virtual void onTopicChanged()
   {
-    super.updateFullName()
-    unsubscribeNeed = true
+    super.onTopicChanged()
+    topicChanged = true
   }
 
-  protected virtual override void updatePrefix(Str prefix)
-  {
-    super.updatePrefix(prefix)
-  }
-  
-  virtual override void changed(Slot slot) 
+  internal override virtual void changed(Slot slot) 
   {
     super.changed(slot)
     if (error == Ok && slot.name == "payload" && publishInterval == 0)
@@ -157,28 +171,45 @@ abstract internal class Message extends MessageCommon
   ** 
   ** reset current message's local state 
   ** 
-  internal virtual override void reset()
+  internal override virtual void reset()
   {
     readyToPublish = false
     subscribedToTopic = false
-    unsubscribeNeed = false
+    topicChanged = false
     lastPublishTime = 0L
     lastUpdateTime = 0L
   }
 
+  protected Str getFullTopic() 
+  {
+    if (fullTopicName.length() == 0)
+      generateFullTopic()
+    return fullTopicName
+  }
+
+  protected void generateFullTopic()
+  {
+    //unsubscribe old topic if needed
+    if (fullTopicName.length() > 0 && subscribedToTopic)
+      unsubscribe(getHandle())
+
+    fullTopicName.set(0, 0)
+    collectTopics(fullTopicName, fullTopicNameLen)
+  }
   ////////////////////////////////////////////////////////////////
   // Fields
   ////////////////////////////////////////////////////////////////
   define int strLen = 64
+  define int fullTopicNameLen = 400
 
-  private bool unsubscribeNeed = false
   private bool readyToPublish = false
   private bool subscribedToTopic = false
+  private bool topicChanged = false
   private long lastPublishTime = 0L
   private long lastUpdateTime = 0L
   
-  protected inline Str(strLen) strBuf = "";
-  protected inline Str(fullTopicNameLen) lastSubscribedTopic = ""
+  protected inline Str(strLen) strBuf = ""
+  protected inline Str(fullTopicNameLen) fullTopicName = ""
 
   internal define Log log
 }

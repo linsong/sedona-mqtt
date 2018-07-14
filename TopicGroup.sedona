@@ -19,41 +19,12 @@ class TopicGroup extends MessageCommon
 {
 
   ////////////////////////////////////////////////////////////////
-  // Methods
+  // Interface Methods
   ////////////////////////////////////////////////////////////////
-  private void propagatePrefixToChildren() {
-    for(Component child = Sys.app.lookup(children); child != null; child = Sys.app.lookup(child.nextSibling))
-    {
-      if (child.type.is(MessageCommon.type))
-      {
-        MessageCommon m = (MessageCommon)child
-        m.updatePrefix(fullTopicName)
-      }
-    }
-  }
-
-  protected virtual override void updatePrefix(Str prefix)
-  {
-    super.updatePrefix(prefix)
-    propagatePrefixToChildren()
-  }
-
-  internal virtual override void updateFullName()
-  {
-    super.updateFullName()
-  }
-
-  virtual override void changed(Slot slot)
-  {
-    super.changed(slot)
-    if (slot.name == "topic")
-      propagatePrefixToChildren()
-  }
-
   **
   ** reset current messages local state
   **
-  internal virtual override void reset()
+  internal override void reset()
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -69,7 +40,7 @@ class TopicGroup extends MessageCommon
   **
   ** publish linked value to MQTT broker
   **
-  internal virtual override void publish(Obj handle)
+  internal override void publish(Obj handle)
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -85,7 +56,7 @@ class TopicGroup extends MessageCommon
   **
   ** subscribe topic on MQTT broker refered by given handle
   **
-  internal virtual override void subscribe(Obj handle)
+  internal override void subscribe(Obj handle)
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -101,7 +72,7 @@ class TopicGroup extends MessageCommon
   **
   ** unsubscribe topic on MQTT broker refered by given handle
   **
-  internal virtual override void unsubscribe(Obj handle)
+  internal override void unsubscribe(Obj handle)
   {
     Component child = Sys.app.lookup(children)
     for(;child != null; child = Sys.app.lookup(child.nextSibling))
@@ -114,20 +85,21 @@ class TopicGroup extends MessageCommon
     }
   }
 
-  private Obj getHandle()
+
+  ** 
+  ** call onTopicChanged on all MessageCommon children
+  **
+  override virtual void onTopicChanged() 
   {
-    Component parentComp = Sys.app.lookup(parent)
-    if (parentComp.type.is(Worker.type)) {
-      Worker w = (Worker)parentComp
-      return w.getHandle()
+    Component child = Sys.app.lookup(children)
+    for(;child != null; child = Sys.app.lookup(child.nextSibling))
+    {
+      if (child.type.is(MessageCommon.type))
+      {
+        MessageCommon m = (MessageCommon)child
+        m.onTopicChanged()
+      }
     }
-
-    if (parentComp.type.is(TopicGroup.type)) {
-      TopicGroup t = (TopicGroup)parentComp
-      return t.getHandle()
-    }
-
-    return null
   }
 
   **
@@ -137,11 +109,10 @@ class TopicGroup extends MessageCommon
   {
     if (error != Ok)
       return 0
-    Obj handle = getHandle()
+
     if (eType == Component.REMOVED && child.type.is(MessageCommon.type)) {
-      ((MessageCommon) child).unsubscribe(handle);
+      ((MessageCommon) child).unsubscribe(getHandle());
     }
     return 0
   }
-
 }
