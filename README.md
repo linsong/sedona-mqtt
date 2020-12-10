@@ -5,7 +5,7 @@ The communityMQTT kit is a [MQTT](http://mqtt.org/) client kit in [Sedona Framew
 
 This kit is developed as part of the [community version of Sedona Framework](https://linsong.github.io/sedona/). Sedona Framework is a trademark of Tridium. 
 
-Note: this kit is a native kit, that means you will need to compile its native codes into svm, you can find more details [here](https://linsong.github.io/sedona/doc/nativeMethods.html).
+Note: this kit is a native kit, that means you will need to compile its native codes into svm, you can find more details [here](https://linsong.github.io/sedona/site/language/nativeMethods/).
 
 ## How does the kit work?
 There are 3 types of components: 
